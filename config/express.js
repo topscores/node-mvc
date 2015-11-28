@@ -7,6 +7,7 @@ var sass = require('node-sass-middleware');
 var session = require('express-session');
 var config = require('./config');
 var passport = require('passport');
+var flash = require('connect-flash');
 
 module.exports = function() {
   var app = express();
@@ -27,6 +28,8 @@ module.exports = function() {
     saveUninitialized: true
   }));
 
+  app.use(flash());
+  
   app.use(passport.initialize());
   app.use(passport.session());
 

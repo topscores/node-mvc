@@ -1,9 +1,37 @@
 var User = require('mongoose').model('User');
 
+var getErrorMessage = function(err) {
+    message = '';
+    if (err.code) {
+      switch(err.code) {
+        case 11000:
+        case 11001:
+          message = 'Username already exist';
+          break;
+        default:
+          message = 'Something went wrong';
+      }
+    }
+    else {
+      for (errName in err.errors) {
+        if (err.errors[errName].message) {
+          message = err.errors[errName].message;
+        }
+      }
+    }
+    return message;
+}
+
 exports.renderSignup = function(req, res) {
-  res.render('signup', {
-    title: 'Sign up'
-  });
+  if (!req.user) {
+    res.render('signup', {
+      title: 'Sign up',
+      messages: req.flash('error')
+    });
+  }
+  else {
+    res.redirect('/');
+  }
 }
 
 exports.signup = function(req, res) {
@@ -12,7 +40,11 @@ exports.signup = function(req, res) {
       user.provider = 'local';
 
       user.save(function(err) {
-        if (err) return res.redirect('/signup');
+        if (err) {
+          var message = getErrorMessage(err);
+          req.flash('error', message);
+          return res.redirect('/signup');
+        }
 
         req.login(user, function(err) {
           if (err) return next(err);
@@ -54,7 +86,7 @@ exports.login = function(req, res) {
 }
 
 exports.logout = function(req, res) {
-  req.session = null;
+  req.logout();
   res.render('index', {
     title: 'See you again later',
     isLoggedIn: false
